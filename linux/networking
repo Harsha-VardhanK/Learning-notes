@@ -1,0 +1,190 @@
+DNS:
+
+The domain name system is a distributed way to share these name-to-IP associations instead of requiring each computer to synchronize a hosts file. A name server publishes the IP address for a domain and provides a single location to update when an IP changes.
+
+Ping
+Ping Command is use to check the remote machine is reachable or not.
+
+[~]$ ping 192.168.1.11
+Reply from 192.168.1.11: bytes=32 time=4ms TTL=117
+Reply from 192.168.1.11: bytes=32 time=4ms TTL=117
+To Ping the remote host with a name instead of IP Address make an entry in /etc/hosts file
+
+[~]$ cat >> /etc/hosts
+192.168.1.11 db
+[~]$ ping db
+PING db (192.168.1.11) 56(84) bytes of data.
+64 bytes from db (192.168.1.11): icmp_seq=1 ttl=64 time=0.052 ms
+64 bytes from db (192.168.1.11): icmp_seq=2 ttl=64 time=0.079 ms
+You can configure as many hosts you want in the /etc/hosts file.
+
+[~]$ cat >> /etc/hosts
+192.168.1.10 web
+192.168.1.11 db
+192.168.1.12 nfs
+192.168.1.20 web
+192.168.1.21 db-1
+192.168.1.22 nfs-1
+192.168.1.30 web-1
+192.168.1.31 db-2
+192.168.1.32 nfs-2
+192.168.1.40 web-2
+192.168.1.41 sql
+192.168.1.42 web-5
+192.168.1.50 web-test
+192.168.1.61 db-prod
+192.168.1.52 nfs-4
+192.168.1.60 web-3
+192.168.1.61 db-test
+192.168.1.62 nfs-prod
+Every host has a DNS resolution file /etc/resolv.conf
+
+[~]$ cat /etc/resolv.conf
+nameserver 192.168.1.100    
+The /etc/nsswitch.conf file is used to configure which services are to be used to determine information such as hostnames, password files, and group files.There is a specific search order according to which it is performed. This order is set in this configuration file.
+
+[~]$ cat /etc/nsswitch.conf
+…
+hosts: files dns
+…
+DOMAIN NAMES
+DNS
+
+.com - Commerical or General Purpose.
+.net - Network or General Purpose.
+.edu - Education Purpose
+.org - Organizations for non profit organizations etc.
+Root
+
+RECORD TYPES
+Record
+
+A - IP to host names.
+
+AAAA - Storing ipv6 to hostnames.
+
+CNAME - Mapping one name to another.
+
+To test the DNS resolution you can use nslookup command, this will query a hostname from a DNS Server.
+
+[~]$ nslookup www.google.com
+Server: 8.8.8.8
+Address: 8.8.8.8#53
+Non-authoritative answer:
+Name: www.google.com
+Address: 172.217.0.132
+Another useful tool to query a hostname from a DNS server is dig which return more detailed information as shown.
+[~]$ dig www.google.com
+; <<>> DiG 9.10.3-P4-Ubuntu <<>> www.google.com
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 28065
+;; flags: qr rd ra; QUERY: 1, ANSWER: 6, AUTHORITY: 0, ADDITIONAL: 1
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 512
+;; QUESTION SECTION:
+;www.google.com. IN A
+;; ANSWER SECTION:
+www.google.com. 245 IN A 64.233.177.103
+www.google.com. 245 IN A 64.233.177.105
+www.google.com. 245 IN A 64.233.177.147
+www.google.com. 245 IN A 64.233.177.106
+www.google.com. 245 IN A 64.233.177.104
+www.google.com. 245 IN A 64.233.177.99
+;; Query time: 5 msec
+;; SERVER: 8.8.8.8#53(8.8.8.8)
+;; WHEN: Sun Mar 24 04:34:33 UTC 2019
+;; MSG SIZE rcvd: 139
+----------------------------------------------------------------------------------------
+
+
+Switching & Routing
+Take me to the Tutorial
+Switching
+Switching helps to connect the interface within same network.
+
+switch
+
+To see the interfaces on the hosts use ip link command
+
+[~]$ ip link
+eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP mode
+DEFAULT group default qlen 1000
+To connect to the switch we use ip addr add command
+[~]$ ip addr add 192.168.1.10/24 dev eth0
+Routing
+Router helps to connect to two seprate networks together.
+
+route
+
+To see the existing routing table configuration run the route command.
+
+[~]$ route
+Kernel IP routing table
+Destination Gateway Genmask Flags Metric Ref Use Iface
+To configure a gateway on system B to reach the system on other network run
+[~]$ ip route add 192.168.2.0/24 via 192.168.1.1
+[~]$ route
+
+Kernel IP routing table
+Destination Gateway Genmask Flags Metric Ref Use Iface
+192.168.2.0 192.168.1.1 255.255.255.0 UG 0 0 0 eth0
+To see the ip addresses assign to interfaces use
+[~]$ ip addr
+[~]$ ip route
+To make this changes permanent you must set them in /etc/network/interfaces file.
+
+----------------------------------------------------
+In this lecture we will be going to troubleshooting the issue that Bob is facing.
+
+Bob is not able to reach to the repository server and he get the error as show below.
+
+site
+
+Check Interfaces
+Use the ip link to ensure the primary interface is up.
+
+In this case, the network interface named enp1s0f1 state is up.
+
+[~]$ ip link
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc
+    noqueue state UNKNOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: enp1s0f1: <BROADCAST,BROADCAST,MULTICAST,UP> mtu 1500 qdisc
+    fq_codel state UP mode DEFAULT group default qlen 1000
+    link/ether 08:97:98:6e:55:4d brd ff:ff:ff:ff:ff:ff
+Check if we can resolve the hostname to IP address via nslookup
+
+[~]$ nslookup caleston-repo-01
+Server:      192.168.1.100
+Address:     192.168.1.100 #53
+
+Non-authoritative answer:
+Name: caleston-repo-01
+Address: 192.168.2.5
+ping to check the connectivity.
+
+[~]$ ping caleston-repo-01
+PING caleston-repo-01 (192.168.2.5) 56(84) bytes of data.
+
+--- localhost ping statistics ---
+3 packets transmitted, 0 received, 100% packet loss, time 2034ms
+traceroute to check the number of hops between the source.
+
+[~]$ traceroute 192.168.2.5
+
+Tracing route to example.com [192.168.2.5]
+over a maximum of 30 hops: 
+1 <1 ms <1 ms <1 ms 192.168.1.1
+2 <2 ms <1 ms <1 ms 192.168.2.1
+3 * * * Request timed out.
+To check the port status use netstat command and to use it along with port number use below command.
+
+[caleston-repo-01: ~]$ netstat -an | grep 80 | grep -i LISTEN
+net
+
+To bring up the interface up use below command.
+
+[caleston-repo-01: ~]$ ip link set dev enp1s0f1 up
+iplink
+
